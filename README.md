@@ -1,7 +1,7 @@
 Smartwatch Data Analysis - In Sickness and Health
 ================
 Thomas Evans
-September 2026
+October 2026
 
 - [Overview](#overview)
 - [The Data](#the-data)
@@ -128,12 +128,7 @@ weekday and weekend split.
 briefly, whether they hold — residual plots, normality checks, etc.
 Acknowledging where they’re shaky is a strength, not a weakness.*
 
-<figure>
-<img src="SmartWatch/BPM_RAINCLOUD_P2.png"
-alt="Alt text describing the image" />
-<figcaption aria-hidden="true">Alt text describing the
-image</figcaption>
-</figure>
+![](SmartWatch/BPM_RAINCLOUD_P2.png)
 
 Across all groups, heart rate is elevated during the sick period
 relative to the well period, and weekend values sit marginally higher
@@ -328,29 +323,80 @@ the degree of smoothing would recover those peaks, but at the cost of a
 greater risk of overfitting and modelling trends that add nothing to the
 analysis.
 
-<figure>
-<img src="SmartWatch/BPM_RAW_DAY_P4.png"
-alt="Alt text describing the image" />
-<figcaption aria-hidden="true">Alt text describing the
-image</figcaption>
-</figure>
+![](SmartWatch/BPM_RAW_DAY_P4.png)
 
 From the above we choose a span to smooth the data prior fitting futher
 ARIMA models. We need a span that captures the shape, but is not
 suceptabe to every subtle kind and deviation.
 
-------------------------------------------------------------------------
+![](SmartWatch/BR_ARIMA_WEEK_P8.png) This is a poor fit. The evening
+exercise peak is not captured accurately, and the held-out values
+routinely exceed the upper prediction interval at those hours. The
+broader diurnal shape and general trend, however, are reproduced well.
+The fit could be improved in two ways: retaining more datapoints by
+reducing the degree of smoothing, or training on a longer run of days
+rather than the two used here, giving the model more cycles from which
+to learn the pattern.
+
+It is also apparent that the weekend does not follow the weekday trend,
+reflecting a different daily routine. The window shown above is a single
+arbitrary week drawn from the well period, prior to illness onset.
+
+below we fit wetend the model the the sickness data.
+
+![](SmartWatch/BR_ARIMA_WEEK_P9.png)
 
 ## Interpretation
 
-*Translate the numbers into meaning. For each key result: what does it
-say in plain English, is it practically (not just statistically)
-significant, and how confident are you? This is the paragraph a
-non-statistician should be able to follow.*
+50-124 h (baseline)
 
-*Be honest about limitations — sample size, confounders, what you
-couldn’t test. Naming what you’d do with more data or time shows you
-understand the boundaries of your own analysis.*
+The actuals are in phase with the forecast. Overnight troughs and
+daytime rises line up, and most points sit inside the 80% band. The main
+departures are three isolated single-hour spikes (~135, ~141 and ~148
+BPM at roughly 68, 91 and 119 h), spaced about a day apart, which look
+like bouts of activity. They fall outside the 95% interval but return to
+baseline immediately. They explain the RMSE/MAE ratio of about 1.5 in
+this window: a centred model with occasional heavy-tailed errors.
+
+124-148 h (Saturday)
+
+The overnight trough is still matched, but the daytime peak is mostly
+missing. HR stays around 55-75 BPM while the forecast climbs to about
+100. This is a loss of amplitude, not a change of level, which fits a
+rest day with less activity. It produces the negative bias (-8 BPM) and
+reduced coverage in that window.
+
+148 h onward (sick week)
+
+Two things change at once.
+
+Level shift. The series moves upward and stays there. There are long
+runs above the forecast mean, and for extended stretches (around 200-210
+h, and again near 225-240 h) HR is above the upper 80% band, reaching
+about 110-118 BPM. Elevated troughs. Overnight minima, which reached
+55-60 BPM before, now bottom out around 73-80 BPM. This is the most
+persuasive feature in the plot. Night-time HR is far less confounded by
+activity than daytime HR, so a raised trough points to a physiological
+change rather than to behaviour.
+
+The diurnal rhythm is also flattened and less regular. Peaks no longer
+line up cleanly with the forecast, and the day-to-night range is
+compressed. Together with the level shift, this is why the errors in
+this window are dominated by bias (Bias/MAE ≈ 0.75) and why RMSE is
+close to MAE: a sustained offset rather than spikes.
+
+The errors are also clearly serially correlated. Runs above the forecast
+last many hours, so the 91 observations are worth much less than 91
+independent pieces of evidence.
+
+------------------------------------------------------------------------
+
+Below we asses the error for each of the subgroups above. as shown the
+“Well” period has error clustered around 0, the saturday is slightly
+lose with larger spread, but the sick period is much higher than 0,, and
+the spread is much larger.
+
+![](smartWatch/ERROR_P10.png)
 
 ------------------------------------------------------------------------
 
